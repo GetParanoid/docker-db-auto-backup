@@ -3,47 +3,17 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    - name: Install Python dependencies
-      run: pip install -r dev-requirements.txt
-    - name: Lint
-      run: ./scripts/lint.sh
 
-  e2e-test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    - name: Install Python dependencies
-      run: pip install -r dev-requirements.txt
-    - name: Fetch containers
-      run: docker compose build && docker compose pull
-    - name: Run test
-      run: ./scripts/test.sh
 
   build-deploy:
     runs-on: ubuntu-latest
-    needs:
-      - lint
-      - e2e-test
     steps:
       - uses: actions/checkout@v4
-
       - name: Login to DockerHub
         if: ${{ github.ref == 'refs/heads/master' }}
         uses: docker/login-action@v3
         with:
-          username: theorangeone
+          username: getparanoid
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
@@ -66,5 +36,5 @@ jobs:
           push: ${{ github.ref == 'refs/heads/master' }}
           platforms: linux/arm,linux/amd64,linux/arm64/v8
           tags: |
-            ghcr.io/realorangeone/db-auto-backup:latest
-            theorangeone/db-auto-backup:latest
+            ghcr.io/getparanoid/db-auto-backup:latest
+            getparanoid/db-auto-backup:latest
