@@ -51,4 +51,4 @@ jobs:
             ghcr.io/getparanoid/db-auto-backup:latest
             getparanoid/db-auto-backup:latest
           labels: |
-            org.opencontainers.image.source=https://github.com/getparanoid/db-auto-backup
+            org.opencontainers.image.source=https://github.com/getparanoid/docker-db-auto-backup
