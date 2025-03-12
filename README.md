@@ -1,8 +1,20 @@
-# docker-db-auto-backup
+# docker-db-auto-backup (Forked)
 
 ![](https://github.com/GetParanoid/docker-db-auto-backup/workflows/CI/badge.svg)
 
-A script to automatically back up all databases running under docker on a host, with optional compression support.
+A script to automatically back up all databases running under docker on a host, with optional compression and timestamp support.
+
+
+> **This is a fork of [realorangeone/docker-db-auto-backup](https://github.com/realorangeone/docker-db-auto-backup).**  
+> This version includes additional functionality for timestamped backup file names.
+
+## Changes in this fork:
+- Ability to add timestamps to the backup file name.
+- New environment variables for timestamp configuration:
+  - `TIMESTAMP=false` *(default: false)*
+  - `TIMESTAMP_FORMAT=%Y-%m-%d_%H-%M` *(Defines the timestamp format using [Python's strftime](https://strftime.org/) syntax. )*
+  - `TIMESTAMP_ORDER=after` *(determines whether the timestamp appears before or after the filename)*
+---
 
 ## Supported databases
 
@@ -46,9 +58,17 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./backups:/var/backups
     environment:
-      - SUCCESS_HOOK_URL=https://hc-ping.com/1234
-      - INCLUDE_LOGS=true
+      - TZ=${TZ} # For accurate timestamping i.e America/Chicago
+      - SCHEDULE=${SCHEDULE} #Standard CRON format (Default: 0 0 * *)
+      - SUCCESS_HOOK_URL=${SUCCESS_HOOK_URL}
+      - INCLUDE_LOGS=${INCLUDE_LOGS} 
+      - COMPRESSION=${COMPRESSION} # gzip / lzma / zx / bz2 / plain (disabled - default)
+      - TIMESTAMP=${TIMESTAMP} # Enable or disable timestamps. True / False (Default)
+      - TIMESTAMP_FORMAT=${TIMESTAMP_FORMAT} # Timestamp format Default: '%Y-%m-%d_%H-%M'
+      - TIMESTAMP_ORDER=${TIMESTAMP_ORDER} # Write timestamp before / after (default) filename 
 ```
+> **An example .env file can be found here: [docker-db-auto-backup/blob/master/.env.example](https://github.com/GetParanoid/docker-db-auto-backup/blob/master/.env.example)**  
+
 
 ### Oneshot
 
