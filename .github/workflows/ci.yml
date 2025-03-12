@@ -1,6 +1,13 @@
 name: CI
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '.github/workflows/**'
+  pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
+
 
 permissions:
   contents: read
@@ -35,6 +42,8 @@ jobs:
       - name: Build and push containers
         uses: docker/build-push-action@v5
         with:
+          no-cache: true
+          context: .
           push: ${{ github.ref == 'refs/heads/master' }}
           platforms: linux/arm,linux/amd64,linux/arm64/v8
           tags: |
