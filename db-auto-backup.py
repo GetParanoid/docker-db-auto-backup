@@ -206,7 +206,7 @@ def backup(now: datetime) -> None:
 
         if TIMESTAMP:
             timestamp = datetime.now().strftime(TIMESTAMP_FORMAT)
-            if TIMESTAMP_ORDER == "before":
+            if TIMESTAMP_ORDER.lower() == "before":
                 filename = f"{timestamp}_{container.name}"
             else:
                 filename = f"{container.name}_{timestamp}"
