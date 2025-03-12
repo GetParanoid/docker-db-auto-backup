@@ -1,6 +1,6 @@
 # docker-db-auto-backup
 
-![](https://github.com/RealOrangeOne/docker-db-auto-backup/workflows/CI/badge.svg)
+![](https://github.com/GetParanoid/docker-db-auto-backup/workflows/CI/badge.svg)
 
 A script to automatically back up all databases running under docker on a host, with optional compression support.
 
@@ -40,7 +40,7 @@ version: "2.3"
 
 services:
   backup:
-    image: ghcr.io/realorangeone/db-auto-backup:latest
+    image: ghcr.io/GetParanoid/db-auto-backup:latest
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

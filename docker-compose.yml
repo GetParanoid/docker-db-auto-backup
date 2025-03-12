@@ -3,12 +3,21 @@ services:
     build:
       context: .
     restart: unless-stopped
-    command: "sleep infinity"
-    container_name: docker-db-auto-backup
+    # command: "sleep infinity"
+    container_name: dev-docker-db-auto-backup
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - ./backups:/var/backups
       - ./db-auto-backup.py:/usr/src/db-auto-backup/db-auto-backup.py:ro
+    environment:
+      - TZ=${TZ}
+      - SCHEDULE=${SCHEDULE}
+      - SUCCESS_HOOK_URL=${SUCCESS_HOOK_URL}
+      - INCLUDE_LOGS=${INCLUDE_LOGS}
+      - COMPRESSION=${COMPRESSION}
+      - TIMESTAMP=${TIMESTAMP}
+      - TIMESTAMP_FORMAT=${TIMESTAMP_FORMAT}
+      - TIMESTAMP_ORDER=${TIMESTAMP_ORDER}
     depends_on:
       - psql
       - mariadb
@@ -17,22 +26,26 @@ services:
 
   psql:
     image: postgres:alpine
+    container_name: dev-psql
     restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=password
 
   mariadb:
     image: mariadb:latest
+    container_name: dev-mariadb
     restart: unless-stopped
     environment:
       - MARIADB_ROOT_PASSWORD=password
 
   mysql:
     image: mysql:latest
+    container_name: dev-mysql
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=password
 
   redis:
     image: redis:alpine
+    container_name: dev-redis
     restart: unless-stopped

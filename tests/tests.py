@@ -98,8 +98,8 @@ def test_uptime_kuma_success_hook_url(monkeypatch: Any) -> None:
     [
         ("postgres:14-alpine", "postgres"),
         ("docker.io/postgres:14-alpine", "postgres"),
-        ("ghcr.io/realorangeone/db-auto-backup:latest", "realorangeone/db-auto-backup"),
-        ("theorangeone/db-auto-backup:latest:latest", "theorangeone/db-auto-backup"),
+        ("ghcr.io/GetParanoid/db-auto-backup:latest", "GetParanoid/db-auto-backup"),
+        ("GetParanoid/db-auto-backup:latest:latest", "GetParanoid/db-auto-backup"),
         ("lscr.io/linuxserver/mariadb:latest", "linuxserver/mariadb"),
         ("docker.io/library/postgres:14-alpine", "postgres"),
         ("library/postgres:14-alpine", "postgres"),

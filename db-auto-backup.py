@@ -159,6 +159,9 @@ SCHEDULE = os.environ.get("SCHEDULE", "0 0 * * *")
 SHOW_PROGRESS = sys.stdout.isatty()
 COMPRESSION = os.environ.get("COMPRESSION", "plain")
 INCLUDE_LOGS = bool(os.environ.get("INCLUDE_LOGS"))
+TIMESTAMP = bool(os.environ.get("TIMESTAMP"))
+TIMESTAMP_FORMAT = os.environ.get("TIMESTAMP_FORMAT", "%Y-%m-%d_%H-%M")
+TIMESTAMP_ORDER = os.environ.get("TIMESTAMP_FORMAT", "after")
 
 
 def get_backup_provider(container_names: Iterable[str]) -> Optional[BackupProvider]:
@@ -201,10 +204,21 @@ def backup(now: datetime) -> None:
         if backup_provider is None:
             continue
 
-        backup_file = (
-            BACKUP_DIR
-            / f"{container.name}.{backup_provider.file_extension}{get_compressed_file_extension(COMPRESSION)}"
-        )
+        if TIMESTAMP:
+            timestamp = datetime.now().strftime(TIMESTAMP_FORMAT)
+            if TIMESTAMP_ORDER == "before":
+                filename = f"{timestamp}_{container.name}"
+            else:
+                filename = f"{container.name}_{timestamp}"
+                
+            backup_file = (
+                BACKUP_DIR
+                / f"{filename}.{backup_provider.file_extension}{get_compressed_file_extension(COMPRESSION)}")
+        else:
+            backup_file = (
+                BACKUP_DIR
+                / f"{container.name}.{backup_provider.file_extension}{get_compressed_file_extension(COMPRESSION)}")
+
         backup_temp_file_path = BACKUP_DIR / temp_backup_file_name()
 
         backup_command = backup_provider.backup_method(container)
