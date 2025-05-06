@@ -14,6 +14,8 @@ from typing import IO, Callable, Dict, Iterable, NamedTuple, Optional
 import docker
 import pycron
 import requests
+import boto3
+from botocore.exceptions import ClientError
 from docker.models.containers import Container
 from dotenv import dotenv_values
 from tqdm.auto import tqdm
@@ -127,6 +129,43 @@ def backup_redis(container: Container) -> str:
     return "sh -c 'redis-cli SAVE > /dev/null && cat /data/dump.rdb'"
 
 
+def upload_to_s3(file_path: Path, s3_key: str) -> bool:
+    """
+    Upload a file to S3 compatible storage
+    
+    Returns True if successful, False otherwise
+    """
+    s3_endpoint = os.environ.get("S3_ENDPOINT")
+    s3_bucket = os.environ.get("S3_BUCKET")
+    s3_access_key = os.environ.get("S3_ACCESS_KEY")
+    s3_secret_key = os.environ.get("S3_SECRET_KEY")
+    s3_region = os.environ.get("S3_REGION", "us-east-1")
+    
+    if not all([s3_endpoint, s3_bucket, s3_access_key, s3_secret_key]):
+        print("S3 configuration incomplete, skipping upload")
+        return False
+    
+    try:
+        s3_client = boto3.client(
+            's3',
+            endpoint_url=s3_endpoint,
+            aws_access_key_id=s3_access_key,
+            aws_secret_access_key=s3_secret_key,
+            region_name=s3_region
+        )
+        
+        print(f"Uploading {file_path} to S3 bucket {s3_bucket} with key {s3_key}")
+        s3_client.upload_file(
+            str(file_path),
+            s3_bucket,
+            s3_key
+        )
+        return True
+    except ClientError as e:
+        print(f"Error uploading to S3: {e}")
+        return False
+
+
 BACKUP_PROVIDERS: list[BackupProvider] = [
     BackupProvider(
         name="postgres",
@@ -162,6 +201,9 @@ INCLUDE_LOGS = bool(os.environ.get("INCLUDE_LOGS"))
 TIMESTAMP = bool(os.environ.get("TIMESTAMP"))
 TIMESTAMP_FORMAT = os.environ.get("TIMESTAMP_FORMAT", "%Y-%m-%d_%H-%M")
 TIMESTAMP_ORDER = os.environ.get("TIMESTAMP_FORMAT", "after")
+S3_ENABLED = bool(os.environ.get("S3_ENABLED"))
+S3_PREFIX = os.environ.get("S3_PREFIX", "backups")
+S3_KEEP_LOCAL = os.environ.get("S3_KEEP_LOCAL", "true").lower() == "true"
 
 
 def get_backup_provider(container_names: Iterable[str]) -> Optional[BackupProvider]:
@@ -195,6 +237,7 @@ def backup(now: datetime) -> None:
     containers = docker_client.containers.list()
 
     backed_up_containers = []
+    s3_uploaded_files = []
 
     print(f"Found {len(containers)} containers.")
 
@@ -246,17 +289,29 @@ def backup(now: datetime) -> None:
             print(description)
 
         backed_up_containers.append(container.name)
+        
+        if S3_ENABLED:
+            s3_key = f"{S3_PREFIX}/{backup_file.name}"
+            if upload_to_s3(backup_file, s3_key):
+                s3_uploaded_files.append(s3_key)
+                if not S3_KEEP_LOCAL:
+                    backup_file.unlink()
+                    print(f"Removed local file {backup_file} after S3 upload")
 
     duration = (datetime.now() - now).total_seconds()
     print(
         f"Backup of {len(backed_up_containers)} containers complete in {duration:.2f} seconds."
     )
+    
+    if S3_ENABLED:
+        print(f"Uploaded {len(s3_uploaded_files)} files to S3.")
 
     if success_hook_url := get_success_hook_url():
         if INCLUDE_LOGS:
-            response = requests.post(
-                success_hook_url, data="\n".join(backed_up_containers)
-            )
+            log_data = "\n".join(backed_up_containers)
+            if S3_ENABLED:
+                log_data += "\n\nS3 Uploads:\n" + "\n".join(s3_uploaded_files)
+            response = requests.post(success_hook_url, data=log_data)
         else:
             response = requests.get(success_hook_url)
 
